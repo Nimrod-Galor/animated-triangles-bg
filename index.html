@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        html, body{padding: 0; margin: 0;}
+    </style>
+    <title>Document</title>
+</head>
+<body>
+    <canvas width="95" height="95" id="canvas"></canvas>
+
+    <script type="text/javascript">
+        window.addEventListener('resize', initScene);
+        window.addEventListener('load', initScene);
+
+        var width  = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+        var height = window.innerHeight|| document.documentElement.clientHeight|| document.body.clientHeight;
+
+        
+
+        var context;
+
+        var agents = [];
+        var linesDrawn = [];
+
+        const animate = () => {
+            context.fillStyle = 'white';
+            context.fillRect(0, 0, width, height);
+
+            for(let x = 0; x < linesDrawn.length; x++){
+                context.beginPath();
+                context.strokeStyle = "#FF0000";
+                context.moveTo(linesDrawn[x].v1.pos.x, linesDrawn[x].v1.pos.y);
+                context.lineTo(linesDrawn[x].v2.pos.x, linesDrawn[x].v2.pos.y);
+                context.stroke();
+            }
+
+            agents.forEach((agent, index) => {
+                agent.update();
+                agent.draw(context);
+                agent.bounce(width, height);
+            });
+
+            //check lines intersection (bounce)
+            for(let x = 0; x < linesDrawn.length; x++){
+                for(let y = 0; y < linesDrawn.length; y++){
+                    if(linesDrawn[x].v1 == linesDrawn[y].v2 || linesDrawn[x].v2 == linesDrawn[y].v1){
+                        continue;
+                    }
+                    if(intersects(linesDrawn[x].v1.pos.x, linesDrawn[x].v1.pos.y, linesDrawn[x].v2.pos.x, linesDrawn[x].v2.pos.y, linesDrawn[y].v1.pos.x, linesDrawn[y].v1.pos.y, linesDrawn[y].v2.pos.x, linesDrawn[y].v2.pos.y)){
+                        let intersectionPoint = lineLineIntersection(linesDrawn[x].v1.pos, linesDrawn[x].v2.pos, linesDrawn[y].v1.pos, linesDrawn[y].v2.pos);
+                        let closestPoint = [linesDrawn[x].v1, linesDrawn[x].v2, linesDrawn[y].v1, linesDrawn[y].v2].reduce((a, b) => a.pos.getDistance(b.pos) ? a : b);
+                        closestPoint.vel.x *= -1;
+                        closestPoint.vel.y *= -1;
+                    }
+                }
+            }
+            
+            requestAnimationFrame(animate)
+        }
+
+        function lineLineIntersection(A, B, C, D){
+            // Line AB represented as a1x + b1y = c1
+            let a1 = B.y - A.y;
+            let b1 = A.x - B.x;
+            let c1 = a1*(A.x) + b1*(A.y);
+
+            // Line CD represented as a2x + b2y = c2
+            let a2 = D.y - C.y;
+            let b2 = C.x - D.x;
+            let c2 = a2*(C.x)+ b2*(C.y);
+
+            let determinant = a1*b2 - a2*b1;
+
+            if (determinant == 0){
+                // The lines are parallel. This is simplified
+                // by returning a pair of FLT_MAX
+                //return make_pair(FLT_MAX, FLT_MAX);
+            }else{
+                let x = (b2*c1 - b1*c2)/determinant;
+                let y = (a1*c2 - a2*c1)/determinant;
+                return new Vector(x, y);
+            }
+        }
+
+
+        function initScene(){
+            width  = (window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth)  * 0.997;
+            height = (window.innerHeight|| document.documentElement.clientHeight|| document.body.clientHeight)  * 0.997;
+
+            let canvas = document.getElementById("canvas");
+            canvas.width = width;
+            canvas.height = height;
+
+            context = canvas.getContext("2d");
+
+            // init agents
+            agents = [
+                new Agent(0, 0, 0),
+                new Agent(width * 0.3, 0, 1),
+                new Agent(width * 0.6, 0, 2),
+                new Agent(width, 0, 3),
+                new Agent(width, height * 0.5, 4),
+                new Agent(width, height, 5),
+                new Agent(width * 0.6, height, 6),
+                new Agent(width * 0.3, height, 7),
+                new Agent(0, height, 8),
+                new Agent(0, height * 0.6, 9),
+                new Agent(0, height * 0.3, 10),
+            ];
+
+            for (let i = 0; i < 40; i++) {
+                const x = randomRange(0, width);
+                const y = randomRange(0, height);
+
+                agents.push(new Agent(x, y, i + 11));
+            }
+
+            // set triangle side
+            linesDrawn = [];
+            for (let i = 0; i < agents.length; i++) {
+                let agent = agents[i];
+
+                for (let j = i + 1; j < agents.length; j++) {
+                    let other = agents[j];
+
+                    // check intersection
+                    let intersectionFlag = false;
+                    
+                    for(let x = 0; x< agents.length; x++){
+                        const xPos = agents[x];
+                        for(let z = 0; z < agents.length; z++){
+                            const zPos = agents[z];
+                            if(agent == xPos || agent == zPos || other == xPos || other == zPos || xPos == zPos){
+                                continue;
+                            }
+
+                            if(intersects(agent.pos.x, agent.pos.y, other.pos.x, other.pos.y, xPos.pos.x, xPos.pos.y, zPos.pos.x, zPos.pos.y)){
+                                let dist1 = agent.pos.getDistance(other.pos);
+                                let dist2 = xPos.pos.getDistance(zPos.pos);
+                                if(dist1 <= dist2){
+                                    continue;
+                                }
+                                intersectionFlag = true;
+                                break;
+                            }
+
+                        }
+                        if(intersectionFlag){
+                            break;
+                        }
+                    }
+
+                    if(!intersectionFlag){
+                        linesDrawn.push({"v1": agent, "v2": other});
+                    }
+                }
+            }
+
+            for (let i = 0; i < agents.length; i++) {
+                let agent = agents[i];
+
+                for (let j = i + 1; j < agents.length; j++) {
+                    let other = agents[j];
+
+                    // check intersection
+                    let intersectionFlag = false;
+                    for(let x = 0; x < linesDrawn.length; x++){
+                        if(agent == linesDrawn[x].v1 && other == linesDrawn[x].v2){
+                            continue;
+                        }
+
+                        if(intersects(agent.pos.x, agent.pos.y, other.pos.x, other.pos.y, linesDrawn[x].v1.pos.x, linesDrawn[x].v1.pos.y, linesDrawn[x].v2.pos.x, linesDrawn[x].v2.pos.y)){
+                            intersectionFlag = true;
+                            break;
+                        }
+                    }
+
+                    if(!intersectionFlag){
+                        linesDrawn.push({"v1": agent, "v2": other});
+                    }
+                }
+
+            }
+
+            animate();
+        }
+
+        function randomRange(min, max){
+            return Math.random() * (max - min) + min;
+        }
+
+        function mapRange(value, low1, high1, low2, high2) {
+            return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
+        }
+
+        function intersects(a,b,c,d,p,q,r,s) {
+            var det, gamma, lambda;
+            det = (c - a) * (s - q) - (r - p) * (d - b);
+            if (det === 0) {
+                return false;
+            } else {
+                lambda = ((s - q) * (r - a) + (p - r) * (s - b)) / det;
+                gamma = ((b - d) * (r - a) + (c - a) * (s - b)) / det;
+                return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
+            }
+        }
+
+        class Vector {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+            }
+
+            getDistance(v) {
+                const dx = this.x - v.x;
+                const dy = this.y - v.y;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+
+        }
+
+        class Agent {
+            constructor(x, y, i) {
+                this.pos = new Vector(x, y);
+                this.vel = new Vector(randomRange(-1, 1), randomRange(-1, 1));
+                this.radius = randomRange(4, 12);
+                this.index = i;
+            }
+
+            bounce(width, height) {
+                if (this.pos.x <= 0 || this.pos.x >= width)  this.vel.x *= -1;
+                if (this.pos.y <= 0 || this.pos.y >= height) this.vel.y *= -1;
+
+            }
+
+            update() {
+                if(this.index == 0 || this.index == 3 || this.index == 5 || this.index == 8){
+                    return;
+                }else if(this.index == 1 || this.index == 2 || this.index == 6 || this.index == 7){
+                    this.pos.x += this.vel.x * 0.1;
+                }else if(this.index == 9 || this.index == 10){
+                    this.pos.y += this.vel.y * 0.1;
+                }else{
+                    this.pos.x += this.vel.x * 0.1;
+                    this.pos.y += this.vel.y * 0.1;
+                }
+            }
+
+            draw(context) {
+                context.save();
+                context.translate(this.pos.x, this.pos.y);
+
+                context.lineWidth = 4;
+
+                context.beginPath();
+                context.arc(0, 0, this.radius, 0, Math.PI * 2);
+                context.fill();
+                context.stroke();
+
+                context.restore();
+            }
+        }
+        
+        
+        
+    </script>
+</body>
+</html>
