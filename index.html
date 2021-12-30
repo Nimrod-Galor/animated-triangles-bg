@@ -7,6 +7,7 @@
     <style>
         html, body{padding: 0; margin: 0;}
     </style>
+    <script src="delaunay.js"></script>
     <title>Document</title>
 </head>
 <body>
@@ -16,15 +17,187 @@
         window.addEventListener('resize', initScene);
         window.addEventListener('load', initScene);
 
-        var width  = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-        var height = window.innerHeight|| document.documentElement.clientHeight|| document.body.clientHeight;
-
-        
-
+        var fps = 30;
+        var now;
+        var then = Date.now();
+        var interval = 1000/fps;
+        var delta;
+        var width;
+        var height;
         var context;
 
         var agents = [];
-        var linesDrawn = [];
+        var triangles = [];
+
+        function initScene(){
+            width  = (window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth);
+            height = (window.innerHeight|| document.documentElement.clientHeight|| document.body.clientHeight)  * 0.998;
+
+            let canvas = document.getElementById("canvas");
+            canvas.width = width;
+            canvas.height = height;
+
+            context = canvas.getContext("2d");
+
+            agents = [
+                new Point(0, 0, true),
+                new Point(width * 0.3, 0, true),
+                new Point(width * 0.6, 0, true),
+                new Point(width, 0, true),
+                new Point(width, height * 0.3, true),
+                new Point(width, height * 0.6, true),
+                new Point(width, height, true),
+                new Point(width * 0.6, height, true),
+                new Point(width * 0.3, height, true),
+                new Point(0, height, true),
+                new Point(0, height * 0.6, true),
+                new Point(0, height * 0.3, true),
+            ];
+
+            for (let i = 0; i < 40; i++) {
+                let x = Math.round( randomRange(0, width));
+                let y = Math.round( randomRange(0, height));
+                agents.push(new Point(x, y));
+            }
+
+            let points = [];
+            agents.forEach((agent, index) => {
+                points.push([agent.pos.x, agent.pos.y]);
+            });
+
+            let delaunay = new Delaunay(points);
+            let trianglesArr = delaunay.triangulate();
+
+            for(let i = 0; i <trianglesArr.length; i+=3){
+                triangles.push(
+                    new Triangle(
+                        getAgent(trianglesArr[i]), 
+                        getAgent(trianglesArr[i + 1]), 
+                        getAgent(trianglesArr[i + 2]), 
+                        rblue()
+                    )
+                );
+            }
+
+            animate();
+        }
+
+        function getAgent(p){
+            for(let i=0; i<agents.length;i++){
+                if(agents[i].pos.x == p[0] && agents[i].pos.y == p[1]){
+                    console.log("IN");
+                    return agents[i];
+                }
+            };
+        }
+
+        const animate = () => {
+            now = Date.now();
+            delta = now - then;
+            
+            if (delta > interval) {
+                then = now - (delta % interval);
+                for(let i=0; i < triangles.length; i++){
+                    context.beginPath();
+                    context.moveTo(triangles[i].p1.pos.x, triangles[i].p1.pos.y);
+                    context.lineTo(triangles[i].p2.pos.x, triangles[i].p2.pos.y);
+                    context.lineTo(triangles[i].p3.pos.x, triangles[i].p3.pos.y);
+                    context.closePath();
+                    context.stroke(); 
+                    context.fillStyle = triangles[i].color;
+                    context.fill(); 
+
+                    if(triangles[i].areaBounce() < 250){
+                        if(!triangles[i].p1.static){
+                            //let a = calcangle()
+                            triangles[i].p1.vel.x *= -1;
+                            triangles[i].p1.vel.y *= -1;
+                        }
+                        if(!triangles[i].p2.static){
+                            triangles[i].p2.vel.x *= -1;
+                            triangles[i].p2.vel.y *= -1;
+                        }
+                        if(!triangles[i].p3.static){
+                            triangles[i].p3.vel.x *= -1;
+                            triangles[i].p3.vel.y *= -1;
+                        }
+                    }
+                }
+
+                for(let i = 12; i < agents.length; i++){
+                    agents[i].update();
+                    agents[i].bounce();
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        /*function calcangle(ax,ay,bx,by,cx,cy,dx,dy) {
+            let dx0  = bx - ax;
+            let dy0  = by - ay;
+            let dx1  = x11 - cx;
+            let dy1  = dy - cy;
+            let angle = Math.atan2(dx0 * dy1 - dx1 * dy0, dx0 * dx1 + dy0 * dy1);
+            //writeln(angle);
+            //writeln(angle*180/3.1415926);
+            return angle;
+        }*/
+
+        function rblue(){
+            let h = 240;
+            //let s = Math.floor(Math.random() * 50);
+            let s = Math.floor(randomRange(40, 50));
+            //let l = Math.floor(Math.random() * 30);
+            let l = Math.floor(randomRange(30, 40));
+            let color = 'hsl(' + h + ', ' + s + '%, ' + l + '%)';
+            return color;
+        }
+
+        function randomRange(min, max){
+            return Math.random() * (max - min) + min;
+        }
+
+        class Vector {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+            }
+        }
+
+        class Point {
+            constructor(x, y, s=false) {
+                this.pos = new Vector(x, y);
+                this.vel = new Vector(randomRange(-1, 1), randomRange(-1, 1));
+                this.static = s;
+            }
+
+            bounce() {
+                if (this.pos.x <= 0 || this.pos.x >= width)  this.vel.x *= -1;
+                if (this.pos.y <= 0 || this.pos.y >= height) this.vel.y *= -1;
+            }
+
+            update() {
+                this.pos.x += this.vel.x * 0.1;
+                this.pos.y += this.vel.y * 0.1;
+            }
+
+        }
+
+        class Triangle{
+            constructor(_p1, _p2, _p3, _color){
+                this.p1 = _p1;
+                this.p2 = _p2;
+                this.p3 = _p3;
+                this.color = _color;
+            }
+
+            areaBounce(){
+                let area =1/2 * (this.p1.pos.x * (this.p2.pos.y - this.p3.pos.y) + this.p2.pos.x * (this.p3.pos.y - this.p1.pos.y) + this.p3.pos.x * (this.p1.pos.y - this.p2.pos.y));
+                return area;
+            }
+        }
+
+        /*
 
         const animate = () => {
             context.fillStyle = 'white';
@@ -189,9 +362,7 @@
             animate();
         }
 
-        function randomRange(min, max){
-            return Math.random() * (max - min) + min;
-        }
+        
 
         function mapRange(value, low1, high1, low2, high2) {
             return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
@@ -209,62 +380,8 @@
             }
         }
 
-        class Vector {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-            }
-
-            getDistance(v) {
-                const dx = this.x - v.x;
-                const dy = this.y - v.y;
-                return Math.sqrt(dx * dx + dy * dy);
-            }
-
-        }
-
-        class Agent {
-            constructor(x, y, i) {
-                this.pos = new Vector(x, y);
-                this.vel = new Vector(randomRange(-1, 1), randomRange(-1, 1));
-                this.radius = randomRange(4, 12);
-                this.index = i;
-            }
-
-            bounce(width, height) {
-                if (this.pos.x <= 0 || this.pos.x >= width)  this.vel.x *= -1;
-                if (this.pos.y <= 0 || this.pos.y >= height) this.vel.y *= -1;
-
-            }
-
-            update() {
-                if(this.index == 0 || this.index == 3 || this.index == 5 || this.index == 8){
-                    return;
-                }else if(this.index == 1 || this.index == 2 || this.index == 6 || this.index == 7){
-                    this.pos.x += this.vel.x * 0.1;
-                }else if(this.index == 9 || this.index == 10){
-                    this.pos.y += this.vel.y * 0.1;
-                }else{
-                    this.pos.x += this.vel.x * 0.1;
-                    this.pos.y += this.vel.y * 0.1;
-                }
-            }
-
-            draw(context) {
-                context.save();
-                context.translate(this.pos.x, this.pos.y);
-
-                context.lineWidth = 4;
-
-                context.beginPath();
-                context.arc(0, 0, this.radius, 0, Math.PI * 2);
-                context.fill();
-                context.stroke();
-
-                context.restore();
-            }
-        }
         
+        */
         
         
     </script>
