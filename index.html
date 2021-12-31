@@ -133,24 +133,48 @@
                             //bouncPoint.p1 = minDistance( triangles[i].p2.pos,  triangles[i].p3.pos,  triangles[i].p1.pos);
                             if(!pointVelRevertFlag.includes(triangles[i].p1)){
                                 pointVelRevertFlag.push(triangles[i].p1);
-                                triangles[i].p1.vel.x *= -1;
-                                triangles[i].p1.vel.y *= -1;
+                                //let tvec = reflect(triangles[i].p1.vel);
+                                
+                                
+                                reflect(triangles[i].p2.pos,  triangles[i].p3.pos,  triangles[i].p1.vel);
+
+                                //triangles[i].p1.vel.y = tvec.y;
+                                //triangles[i].p1.vel.x = tvec.x;
+                                
                             }
                         }
                         if(!triangles[i].p2.static){
                             //bouncPoint.p2 = minDistance( triangles[i].p1.pos,  triangles[i].p3.pos,  triangles[i].p2.pos);
                             if(!pointVelRevertFlag.includes(triangles[i].p2)){
                                 pointVelRevertFlag.push(triangles[i].p2);
-                                triangles[i].p2.vel.x *= -1;
-                                triangles[i].p2.vel.y *= -1;
+                                //let tvec = reflect(triangles[i].p2.vel);
+                                
+                                //triangles[i].p2.vel.x *= -1;
+                                //triangles[i].p2.vel.y *= -1;
+                                reflect(triangles[i].p1.pos,  triangles[i].p3.pos,  triangles[i].p2.vel);
+                                /*if(triangles[i].p2.vel.y <= 0){
+                                    triangles[i].p2.vel.x = tvec.x;
+                                }
+                                if(triangles[i].p2.vel.x <= 0){
+                                    triangles[i].p2.vel.y = tvec.y;
+                                }*/
                             }
                         }
                         if(!triangles[i].p3.static){
                             //bouncPoint.p3 = minDistance( triangles[i].p2.pos,  triangles[i].p1.pos,  triangles[i].p3.pos);
                             if(!pointVelRevertFlag.includes(triangles[i].p3)){
                                 pointVelRevertFlag.push(triangles[i].p3);
-                                triangles[i].p3.vel.x *= -1;
-                                triangles[i].p3.vel.y *= -1;
+                                //let tvec = reflect(triangles[i].p3.vel);
+                                
+                                //triangles[i].p3.vel.x *= -1;
+                                //triangles[i].p3.vel.y *= -1;
+                                reflect(triangles[i].p2.pos,  triangles[i].p1.pos,  triangles[i].p3.vel);
+                                /*if(triangles[i].p3.vel.y <= 0){
+                                    triangles[i].p3.vel.x = tvec.x;
+                                }
+                                if(triangles[i].p3.vel.x <= 0){
+                                    triangles[i].p3.vel.y = tvec.y;
+                                }*/
                             }
                         }
 /*
@@ -185,6 +209,87 @@
             }
             requestAnimationFrame(animate);
         }
+
+        function sign(A, B, P){
+            return (B.x - A.x) * (P.y - A.y) - (B.y - A.y) * (P.x - A.x);
+        }
+       /* function divide (vec, scalar) {
+            return new Vector(vec.x / scalar, vec.y / scalar);
+        };
+
+        function magnitude(vec){
+            return Math.sqrt(vec.x * vec.x + vec.y * vec.y);
+        }
+
+        function normalisedVector(vec) {
+            let mag = magnitude(vec);
+            return divide(vec, mag);
+        }*/
+
+        function normalize(vec){
+            var length = Math.sqrt(vec.x * vec.x + vec.y * vec.y); //calculating length
+            let x = vec.x / length; //assigning new value to x (dividing x by length of the vector)
+            let y= vec.y / length; //assigning new value to y
+            return new Vector(x, y);
+        }
+
+        function dot(Veca, Vecb) {
+            return Veca.x * Vecb.x + Veca.y * Vecb.y; // + a.z*b.z if you're in 3D
+        }
+
+
+        function reflect(A, B, P){
+            // get vector for the line
+            let lineVecX = B.x - A.x;
+            let lineVecY = B.y - A.y;
+            // get line length
+            let lineLen = Math.sqrt(lineVecX * lineVecX + lineVecY * lineVecY);
+            // the normalised vector (1 unit long)
+            let lineVnormX = lineVecX / lineLen;
+            let lineVnormY = lineVecY / lineLen;
+
+            // normalize point vec
+            let magnitude = Math.sqrt(P.x * P.x + P.y * P.y);
+            let dnormX = P.x / magnitude;
+            let dnormY = P.y / magnitude;
+
+            // velocity vector line normal dot product times 2
+            let dd = (dnormX * lineVnormX + dnormY * lineVnormY) * 2;
+            // the reflected delta
+            let refX = lineVnormX * dd - dnormX;
+            let refY = lineVnormY * dd - dnormY;
+
+            // normalize reflection
+            let len = Math.sqrt(refX * refX + refY * refY);
+            P.x = (refX / len) * magnitude; // I have kept the same speed.
+            P.y = (refY / len) * magnitude;
+        }
+
+
+        /*
+        function reflect(incidentVec){
+            let normal = normalize(incidentVec);
+//console.log("normal: " + JSON.stringify(normal));
+            //let out = incidentVec - 2 * dot(incidentVec, normal) * normal;
+            let dotp = dot(incidentVec, normal);
+//console.log("dotp: " + dotp);
+            let outx = incidentVec.x - 2 * dotp * normal.x;
+            let outy = incidentVec.y - 2 * dotp * normal.y;
+
+            //let outx = 2 * dotp * normal.x - incidentVec.x;
+            //let outy = 2 * dotp * normal.y - incidentVec.y;
+
+            let refVec = new Vector(outx, outy);
+//console.log("out: " + (-2 * dotp * normal.x));
+//console.log("incidentVec: " + JSON.stringify(incidentVec));
+//console.log("refVec: " + JSON.stringify(refVec));
+/*            let rad = out * (Math.PI / 180);
+            let reflectedVec = new Vector(Math.cos(rad), Math.sin(rad));
+console.log("reflectedVec: " + JSON.stringify(reflectedVec));* /
+            return refVec;
+        }
+*/
+
 /*
         // return angle between a velocity (particles motion) and a line
         // between a line segment AB and a point E
@@ -228,12 +333,7 @@ console.log("angleDeg:" + angleDeg + " nx:" + nx + " ny:" + ny);
             return new_vector;
         }
 
-        function normal(vec){
-            var length = Math.sqrt(vec.x * vec.x + vec.y * vec.y); //calculating length
-            let x = vec.x / length; //assigning new value to x (dividing x by length of the vector)
-            let y= vec.y / length; //assigning new value to y
-            return {x:x, y:y};
-        }
+        
 
         function add(vecA, vecB){
             return {x: vecA.x + vecB.x, y: vecA.y + vecB.y};
