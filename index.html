@@ -17,7 +17,7 @@
         window.addEventListener('resize', initScene);
         window.addEventListener('load', initScene);
 
-        var fps = 30;
+        var fps = 20;
         var now;
         var then = Date.now();
         var interval = 1000/fps;
@@ -25,7 +25,6 @@
         var width;
         var height;
         var context;
-
         var agents = [];
         var triangles = [];
 
@@ -72,10 +71,10 @@
                 new Point(0, height * 0.2, true),
             ];
 
-            for (let i = 0; i < 50; i++) {
+            for (let i = 0; i < 40; i++) {
                 let x = randomRange(0, width);
                 let y = randomRange(0, height);
-                agents.push(new Point(x, y));
+                agents.push(new Point(x, y, false));
             }
 
             let points = [];
@@ -115,6 +114,8 @@
             
             if (delta > interval) {
                 then = now - (delta % interval);
+                context.fillStyle = "#FFFFFF";
+                context.fillRect(0, 0, width, height);
 
                 let pointVelRevertFlag = [];
                 for(let i=0; i < triangles.length; i++){
@@ -127,116 +128,34 @@
                     context.fillStyle = triangles[i].color;
                     context.fill(); 
 
-                    if(triangles[i].areaBounce() <= 50){
-                        let bouncPoint = {p1:Number.MAX_VALUE, p2:Number.MAX_VALUE, p3:Number.MAX_VALUE};
+                    if(triangles[i].getArea() <= 50){
                         if(!triangles[i].p1.static){
-                            //bouncPoint.p1 = minDistance( triangles[i].p2.pos,  triangles[i].p3.pos,  triangles[i].p1.pos);
                             if(!pointVelRevertFlag.includes(triangles[i].p1)){
                                 pointVelRevertFlag.push(triangles[i].p1);
-                                //let tvec = reflect(triangles[i].p1.vel);
-                                
-                                
                                 reflect(triangles[i].p2.pos,  triangles[i].p3.pos,  triangles[i].p1.vel);
-
-                                //triangles[i].p1.vel.y = tvec.y;
-                                //triangles[i].p1.vel.x = tvec.x;
-                                
                             }
                         }
                         if(!triangles[i].p2.static){
-                            //bouncPoint.p2 = minDistance( triangles[i].p1.pos,  triangles[i].p3.pos,  triangles[i].p2.pos);
                             if(!pointVelRevertFlag.includes(triangles[i].p2)){
                                 pointVelRevertFlag.push(triangles[i].p2);
-                                //let tvec = reflect(triangles[i].p2.vel);
-                                
-                                //triangles[i].p2.vel.x *= -1;
-                                //triangles[i].p2.vel.y *= -1;
                                 reflect(triangles[i].p1.pos,  triangles[i].p3.pos,  triangles[i].p2.vel);
-                                /*if(triangles[i].p2.vel.y <= 0){
-                                    triangles[i].p2.vel.x = tvec.x;
-                                }
-                                if(triangles[i].p2.vel.x <= 0){
-                                    triangles[i].p2.vel.y = tvec.y;
-                                }*/
                             }
                         }
                         if(!triangles[i].p3.static){
-                            //bouncPoint.p3 = minDistance( triangles[i].p2.pos,  triangles[i].p1.pos,  triangles[i].p3.pos);
                             if(!pointVelRevertFlag.includes(triangles[i].p3)){
                                 pointVelRevertFlag.push(triangles[i].p3);
-                                //let tvec = reflect(triangles[i].p3.vel);
-                                
-                                //triangles[i].p3.vel.x *= -1;
-                                //triangles[i].p3.vel.y *= -1;
                                 reflect(triangles[i].p2.pos,  triangles[i].p1.pos,  triangles[i].p3.vel);
-                                /*if(triangles[i].p3.vel.y <= 0){
-                                    triangles[i].p3.vel.x = tvec.x;
-                                }
-                                if(triangles[i].p3.vel.x <= 0){
-                                    triangles[i].p3.vel.y = tvec.y;
-                                }*/
                             }
                         }
-/*
-                        let minDist = Math.min(bouncPoint.p1, bouncPoint.p2, bouncPoint.p3);
-//console.log(JSON.stringify(bouncPoint) + " min: " + minDist);
-                        if(minDist == bouncPoint.p1){
-                            bouncePoint(triangles[i].p2,  triangles[i].p3,  triangles[i].p1);
-                            triangles[i].color = "red";
-                            //triangles[i].p1.vel.x = newVel.x;
-                            //triangles[i].p1.vel.y = newVel.y;
-                        }else if(minDist == bouncPoint.p2){
-                            bouncePoint(triangles[i].p1,  triangles[i].p3,  triangles[i].p2);
-                            triangles[i].color = "green";
-                            //triangles[i].p2.vel.x = newVel.x;
-                            //triangles[i].p2.vel.y = newVel.y;
-                        }else if(minDist == bouncPoint.p3){
-                            bouncePoint(triangles[i].p2,  triangles[i].p1,  triangles[i].p3);
-                            triangles[i].color = "blue";
-                            //triangles[i].p3.vel.x = newVel.x;
-                            //triangles[i].p3.vel.y = newVel.y;
-                        }else{
-                            console.log("FFFFFFF")
-                        }
-                        */
                     }
                 }
 
-                for(let i = 0; i < agents.length; i++){
+                for(let i = 30; i < agents.length; i++){
                     agents[i].update();
-                    //agents[i].bounce();
                 }
             }
             requestAnimationFrame(animate);
         }
-
-        function sign(A, B, P){
-            return (B.x - A.x) * (P.y - A.y) - (B.y - A.y) * (P.x - A.x);
-        }
-       /* function divide (vec, scalar) {
-            return new Vector(vec.x / scalar, vec.y / scalar);
-        };
-
-        function magnitude(vec){
-            return Math.sqrt(vec.x * vec.x + vec.y * vec.y);
-        }
-
-        function normalisedVector(vec) {
-            let mag = magnitude(vec);
-            return divide(vec, mag);
-        }*/
-
-        function normalize(vec){
-            var length = Math.sqrt(vec.x * vec.x + vec.y * vec.y); //calculating length
-            let x = vec.x / length; //assigning new value to x (dividing x by length of the vector)
-            let y= vec.y / length; //assigning new value to y
-            return new Vector(x, y);
-        }
-
-        function dot(Veca, Vecb) {
-            return Veca.x * Vecb.x + Veca.y * Vecb.y; // + a.z*b.z if you're in 3D
-        }
-
 
         function reflect(A, B, P){
             // get vector for the line
@@ -265,146 +184,6 @@
             P.y = (refY / len) * magnitude;
         }
 
-
-        /*
-        function reflect(incidentVec){
-            let normal = normalize(incidentVec);
-//console.log("normal: " + JSON.stringify(normal));
-            //let out = incidentVec - 2 * dot(incidentVec, normal) * normal;
-            let dotp = dot(incidentVec, normal);
-//console.log("dotp: " + dotp);
-            let outx = incidentVec.x - 2 * dotp * normal.x;
-            let outy = incidentVec.y - 2 * dotp * normal.y;
-
-            //let outx = 2 * dotp * normal.x - incidentVec.x;
-            //let outy = 2 * dotp * normal.y - incidentVec.y;
-
-            let refVec = new Vector(outx, outy);
-//console.log("out: " + (-2 * dotp * normal.x));
-//console.log("incidentVec: " + JSON.stringify(incidentVec));
-//console.log("refVec: " + JSON.stringify(refVec));
-/*            let rad = out * (Math.PI / 180);
-            let reflectedVec = new Vector(Math.cos(rad), Math.sin(rad));
-console.log("reflectedVec: " + JSON.stringify(reflectedVec));* /
-            return refVec;
-        }
-*/
-
-/*
-        // return angle between a velocity (particles motion) and a line
-        // between a line segment AB and a point E
-        function bouncePoint(A, B, C){
-            //let Vecn = normal(A.pos);//(-y/sqrt(x*x+y*y), x/sqrt(x*x+y*y))
-            //let b = bounce(Vecn, C.vel);
-//console.log(JSON.stringify(b));
-
-            C.vel.x *= -1;//b.x;
-            C.vel.y *= -1;//b.y;
-
-            //let slope = (B.pos.y - A.pos.y) / (B.pos.x - A.pos.x);
-            /*var angleDeg = Math.atan2((B.pos.y - A.pos.y), (B.pos.x - A.pos.x)) * 180 / Math.PI;
-            let nx = -Math.sin(angleDeg);
-            let ny = Math.cos(angleDeg);
-            let dot = C.vel.x * nx + C.vel.y * ny;
-            let vnewx = C.vel.x - 2 * dot * nx;
-            let vnewy = C.vel.y - 2 * dot * ny;
-console.log("angleDeg:" + angleDeg + " nx:" + nx + " ny:" + ny);
-            C.vel.x = vnewx;
-            C.vel.y = vnewy;
-//console.log(JSON.stringify(C));
-* /
-        }
-
-
-
-
-        function bounce(Vecn, Vecv){
-            let tmp = scalarMultiply(-2 * dot(Vecn,Vecv), Vecn);
-            return sub(Vecv, tmp);
-        }
-
-        //function dot(Veca, Vecb) {
-        function dot(Veca, Vecb) {
-            return Veca.x * Vecb.x + Veca.y * Vecb.y; // + a.z*b.z if you're in 3D
-        }
-
-        function scalarMultiply(multi, Vecn){
-            let new_vector = {x:Vecn.x * multi, y:Vecn.y * multi};
-            return new_vector;
-        }
-
-        
-
-        function add(vecA, vecB){
-            return {x: vecA.x + vecB.x, y: vecA.y + vecB.y};
-        }
-
-        function sub(vecA, vecB){
-            return {x: vecA.x - vecB.x, y: vecA.y - vecB.y};
-        }
-
-        // Function to return the minimum distance
-        // between a line segment AB and a point E
-        function minDistance( A,  B,  E){
-            // vector AB
-            var AB = {x: (B.x - A.x), y: (B.y - A.y)};
-        
-            // vector BP
-            var BE ={x: (E.x - B.x), y: (E.y - B.y)};
-        
-            // vector AP
-            var AE = {x: (E.x - A.x), y: (E.y -A.y)};
-        
-            // Variables to store dot product
-            var AB_BE, AB_AE;
-        
-            // Calculating the dot product
-            AB_BE = (AB.x * BE.x + AB.y * BE.y);
-            AB_AE = (AB.x * AE.x + AB.y * AE.y);
-        
-            // Minimum distance from
-            // point E to the line segment
-            var reqAns = 0;
-        
-            // Case 1
-            if (AB_BE > 0) {
-        
-                // Finding the magnitude
-                var y = E.y - B.x;
-                var x = E.x - B.x;
-                reqAns = Math.sqrt(x * x + y * y);
-            }
-        
-            // Case 2
-            else if (AB_AE < 0) {
-                var y = E.y - A.y;
-                var x = E.x - A.x;
-                reqAns = Math.sqrt(x * x + y * y);
-            }
-        
-            // Case 3
-            else {// Finding the perpendicular distance
-                var x1 = AB.x;
-                var y1 = AB.y;
-                var x2 = AE.x;
-                var y2 = AE.y;
-                var mod = Math.sqrt(x1 * x1 + y1 * y1);
-                reqAns = Math.abs(x1 * y2 - y1 * x2) / mod;
-            }
-            return Math.round(reqAns);
-        }
-*/
-        /*function calcangle(ax,ay,bx,by,cx,cy,dx,dy) {
-            let dx0  = bx - ax;
-            let dy0  = by - ay;
-            let dx1  = x11 - cx;
-            let dy1  = dy - cy;
-            let angle = Math.atan2(dx0 * dy1 - dx1 * dy0, dx0 * dx1 + dy0 * dy1);
-            //writeln(angle);
-            //writeln(angle*180/3.1415926);
-            return angle;
-        }*/
-
         function rblue(){
             let h = 240;
             //let s = Math.floor(Math.random() * 50);
@@ -432,18 +211,10 @@ console.log("angleDeg:" + angleDeg + " nx:" + nx + " ny:" + ny);
                 this.vel = s ? {x:0, y:0} : new Vector(randomRange(-10, 10), randomRange(-10, 10));
                 this.static = s;
             }
-
-            bounce() {
-console.log("check bounce: " + JSON.stringify(this.pos));
-                if (this.pos.x <= 0 || this.pos.x >= width)  this.vel.x *= -1;
-                if (this.pos.y <= 0 || this.pos.y >= height) this.vel.y *= -1;
-            }
-
             update() {
                 this.pos.x += this.vel.x * 0.1;
                 this.pos.y += this.vel.y * 0.1;
             }
-
         }
 
         class Triangle{
@@ -453,199 +224,12 @@ console.log("check bounce: " + JSON.stringify(this.pos));
                 this.p3 = _p3;
                 this.color = _color;
             }
-
-            areaBounce(){
-                let area =1/2 * (this.p1.pos.x * (this.p2.pos.y - this.p3.pos.y) + this.p2.pos.x * (this.p3.pos.y - this.p1.pos.y) + this.p3.pos.x * (this.p1.pos.y - this.p2.pos.y));
+            getArea(){
+                let area = 0.5 * (this.p1.pos.x * (this.p2.pos.y - this.p3.pos.y) + this.p2.pos.x * (this.p3.pos.y - this.p1.pos.y) + this.p3.pos.x * (this.p1.pos.y - this.p2.pos.y));
                 return area;
             }
         }
 
-        /*
-
-        const animate = () => {
-            context.fillStyle = 'white';
-            context.fillRect(0, 0, width, height);
-
-            for(let x = 0; x < linesDrawn.length; x++){
-                context.beginPath();
-                context.strokeStyle = "#FF0000";
-                context.moveTo(linesDrawn[x].v1.pos.x, linesDrawn[x].v1.pos.y);
-                context.lineTo(linesDrawn[x].v2.pos.x, linesDrawn[x].v2.pos.y);
-                context.stroke();
-            }
-
-            agents.forEach((agent, index) => {
-                agent.update();
-                agent.draw(context);
-                agent.bounce(width, height);
-            });
-
-            //check lines intersection (bounce)
-            for(let x = 0; x < linesDrawn.length; x++){
-                for(let y = 0; y < linesDrawn.length; y++){
-                    if(linesDrawn[x].v1 == linesDrawn[y].v2 || linesDrawn[x].v2 == linesDrawn[y].v1){
-                        continue;
-                    }
-                    if(intersects(linesDrawn[x].v1.pos.x, linesDrawn[x].v1.pos.y, linesDrawn[x].v2.pos.x, linesDrawn[x].v2.pos.y, linesDrawn[y].v1.pos.x, linesDrawn[y].v1.pos.y, linesDrawn[y].v2.pos.x, linesDrawn[y].v2.pos.y)){
-                        let intersectionPoint = lineLineIntersection(linesDrawn[x].v1.pos, linesDrawn[x].v2.pos, linesDrawn[y].v1.pos, linesDrawn[y].v2.pos);
-                        let closestPoint = [linesDrawn[x].v1, linesDrawn[x].v2, linesDrawn[y].v1, linesDrawn[y].v2].reduce((a, b) => a.pos.getDistance(b.pos) ? a : b);
-                        closestPoint.vel.x *= -1;
-                        closestPoint.vel.y *= -1;
-                    }
-                }
-            }
-            
-            requestAnimationFrame(animate)
-        }
-
-        function lineLineIntersection(A, B, C, D){
-            // Line AB represented as a1x + b1y = c1
-            let a1 = B.y - A.y;
-            let b1 = A.x - B.x;
-            let c1 = a1*(A.x) + b1*(A.y);
-
-            // Line CD represented as a2x + b2y = c2
-            let a2 = D.y - C.y;
-            let b2 = C.x - D.x;
-            let c2 = a2*(C.x)+ b2*(C.y);
-
-            let determinant = a1*b2 - a2*b1;
-
-            if (determinant == 0){
-                // The lines are parallel. This is simplified
-                // by returning a pair of FLT_MAX
-                //return make_pair(FLT_MAX, FLT_MAX);
-            }else{
-                let x = (b2*c1 - b1*c2)/determinant;
-                let y = (a1*c2 - a2*c1)/determinant;
-                return new Vector(x, y);
-            }
-        }
-
-
-        function initScene(){
-            width  = (window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth)  * 0.997;
-            height = (window.innerHeight|| document.documentElement.clientHeight|| document.body.clientHeight)  * 0.997;
-
-            let canvas = document.getElementById("canvas");
-            canvas.width = width;
-            canvas.height = height;
-
-            context = canvas.getContext("2d");
-
-            // init agents
-            agents = [
-                new Agent(0, 0, 0),
-                new Agent(width * 0.3, 0, 1),
-                new Agent(width * 0.6, 0, 2),
-                new Agent(width, 0, 3),
-                new Agent(width, height * 0.5, 4),
-                new Agent(width, height, 5),
-                new Agent(width * 0.6, height, 6),
-                new Agent(width * 0.3, height, 7),
-                new Agent(0, height, 8),
-                new Agent(0, height * 0.6, 9),
-                new Agent(0, height * 0.3, 10),
-            ];
-
-            for (let i = 0; i < 40; i++) {
-                const x = randomRange(0, width);
-                const y = randomRange(0, height);
-
-                agents.push(new Agent(x, y, i + 11));
-            }
-
-            // set triangle side
-            linesDrawn = [];
-            for (let i = 0; i < agents.length; i++) {
-                let agent = agents[i];
-
-                for (let j = i + 1; j < agents.length; j++) {
-                    let other = agents[j];
-
-                    // check intersection
-                    let intersectionFlag = false;
-                    
-                    for(let x = 0; x< agents.length; x++){
-                        const xPos = agents[x];
-                        for(let z = 0; z < agents.length; z++){
-                            const zPos = agents[z];
-                            if(agent == xPos || agent == zPos || other == xPos || other == zPos || xPos == zPos){
-                                continue;
-                            }
-
-                            if(intersects(agent.pos.x, agent.pos.y, other.pos.x, other.pos.y, xPos.pos.x, xPos.pos.y, zPos.pos.x, zPos.pos.y)){
-                                let dist1 = agent.pos.getDistance(other.pos);
-                                let dist2 = xPos.pos.getDistance(zPos.pos);
-                                if(dist1 <= dist2){
-                                    continue;
-                                }
-                                intersectionFlag = true;
-                                break;
-                            }
-
-                        }
-                        if(intersectionFlag){
-                            break;
-                        }
-                    }
-
-                    if(!intersectionFlag){
-                        linesDrawn.push({"v1": agent, "v2": other});
-                    }
-                }
-            }
-
-            for (let i = 0; i < agents.length; i++) {
-                let agent = agents[i];
-
-                for (let j = i + 1; j < agents.length; j++) {
-                    let other = agents[j];
-
-                    // check intersection
-                    let intersectionFlag = false;
-                    for(let x = 0; x < linesDrawn.length; x++){
-                        if(agent == linesDrawn[x].v1 && other == linesDrawn[x].v2){
-                            continue;
-                        }
-
-                        if(intersects(agent.pos.x, agent.pos.y, other.pos.x, other.pos.y, linesDrawn[x].v1.pos.x, linesDrawn[x].v1.pos.y, linesDrawn[x].v2.pos.x, linesDrawn[x].v2.pos.y)){
-                            intersectionFlag = true;
-                            break;
-                        }
-                    }
-
-                    if(!intersectionFlag){
-                        linesDrawn.push({"v1": agent, "v2": other});
-                    }
-                }
-
-            }
-
-            animate();
-        }
-
-        
-
-        function mapRange(value, low1, high1, low2, high2) {
-            return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
-        }
-
-        function intersects(a,b,c,d,p,q,r,s) {
-            var det, gamma, lambda;
-            det = (c - a) * (s - q) - (r - p) * (d - b);
-            if (det === 0) {
-                return false;
-            } else {
-                lambda = ((s - q) * (r - a) + (p - r) * (s - b)) / det;
-                gamma = ((b - d) * (r - a) + (c - a) * (s - b)) / det;
-                return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
-            }
-        }
-
-        
-        */
-        
         
     </script>
 </body>
