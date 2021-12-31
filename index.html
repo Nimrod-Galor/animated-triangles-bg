@@ -41,20 +41,38 @@
 
             agents = [
                 new Point(0, 0, true),
+                new Point(width * 0.1, 0, true),
+                new Point(width * 0.2, 0, true),
                 new Point(width * 0.3, 0, true),
+                new Point(width * 0.4, 0, true),
+                new Point(width * 0.5, 0, true),
                 new Point(width * 0.6, 0, true),
+                new Point(width * 0.7, 0, true),
+                new Point(width * 0.8, 0, true),
+                new Point(width * 0.9, 0, true),
                 new Point(width, 0, true),
-                new Point(width, height * 0.3, true),
+                new Point(width, height * 0.2, true),
+                new Point(width, height * 0.4, true),
                 new Point(width, height * 0.6, true),
+                new Point(width, height * 0.8, true),
                 new Point(width, height, true),
+                new Point(width * 0.9, height, true),
+                new Point(width * 0.8, height, true),
+                new Point(width * 0.7, height, true),
                 new Point(width * 0.6, height, true),
+                new Point(width * 0.5, height, true),
+                new Point(width * 0.4, height, true),
                 new Point(width * 0.3, height, true),
+                new Point(width * 0.2, height, true),
+                new Point(width * 0.1, height, true),
                 new Point(0, height, true),
+                new Point(0, height * 0.8, true),
                 new Point(0, height * 0.6, true),
-                new Point(0, height * 0.3, true),
+                new Point(0, height * 0.4, true),
+                new Point(0, height * 0.2, true),
             ];
 
-            for (let i = 0; i < 40; i++) {
+            for (let i = 0; i < 50; i++) {
                 let x = randomRange(0, width);
                 let y = randomRange(0, height);
                 agents.push(new Point(x, y));
@@ -85,10 +103,10 @@
         function getAgent(p){
             for(let i=0; i<agents.length;i++){
                 if(agents[i].pos.x == p[0] && agents[i].pos.y == p[1]){
-                    console.log("IN");
                     return agents[i];
                 }
             };
+            console.log("NOT FOUND!");
         }
 
         const animate = () => {
@@ -97,6 +115,8 @@
             
             if (delta > interval) {
                 then = now - (delta % interval);
+
+                let pointVelRevertFlag = [];
                 for(let i=0; i < triangles.length; i++){
                     context.beginPath();
                     context.moveTo(triangles[i].p1.pos.x, triangles[i].p1.pos.y);
@@ -111,18 +131,27 @@
                         let bouncPoint = {p1:Number.MAX_VALUE, p2:Number.MAX_VALUE, p3:Number.MAX_VALUE};
                         if(!triangles[i].p1.static){
                             //bouncPoint.p1 = minDistance( triangles[i].p2.pos,  triangles[i].p3.pos,  triangles[i].p1.pos);
-                            triangles[i].p1.vel.x *= -1;
-                            triangles[i].p1.vel.y *= -1;
+                            if(!pointVelRevertFlag.includes(triangles[i].p1)){
+                                pointVelRevertFlag.push(triangles[i].p1);
+                                triangles[i].p1.vel.x *= -1;
+                                triangles[i].p1.vel.y *= -1;
+                            }
                         }
                         if(!triangles[i].p2.static){
                             //bouncPoint.p2 = minDistance( triangles[i].p1.pos,  triangles[i].p3.pos,  triangles[i].p2.pos);
-                            triangles[i].p2.vel.x *= -1;
-                            triangles[i].p2.vel.y *= -1;
+                            if(!pointVelRevertFlag.includes(triangles[i].p2)){
+                                pointVelRevertFlag.push(triangles[i].p2);
+                                triangles[i].p2.vel.x *= -1;
+                                triangles[i].p2.vel.y *= -1;
+                            }
                         }
                         if(!triangles[i].p3.static){
                             //bouncPoint.p3 = minDistance( triangles[i].p2.pos,  triangles[i].p1.pos,  triangles[i].p3.pos);
-                            triangles[i].p3.vel.x *= -1;
-                            triangles[i].p3.vel.y *= -1;
+                            if(!pointVelRevertFlag.includes(triangles[i].p3)){
+                                pointVelRevertFlag.push(triangles[i].p3);
+                                triangles[i].p3.vel.x *= -1;
+                                triangles[i].p3.vel.y *= -1;
+                            }
                         }
 /*
                         let minDist = Math.min(bouncPoint.p1, bouncPoint.p2, bouncPoint.p3);
@@ -149,14 +178,14 @@
                     }
                 }
 
-                for(let i = 12; i < agents.length; i++){
+                for(let i = 0; i < agents.length; i++){
                     agents[i].update();
-                    agents[i].bounce();
+                    //agents[i].bounce();
                 }
             }
             requestAnimationFrame(animate);
         }
-
+/*
         // return angle between a velocity (particles motion) and a line
         // between a line segment AB and a point E
         function bouncePoint(A, B, C){
@@ -178,7 +207,7 @@ console.log("angleDeg:" + angleDeg + " nx:" + nx + " ny:" + ny);
             C.vel.x = vnewx;
             C.vel.y = vnewy;
 //console.log(JSON.stringify(C));
-*/
+* /
         }
 
 
@@ -264,7 +293,7 @@ console.log("angleDeg:" + angleDeg + " nx:" + nx + " ny:" + ny);
             }
             return Math.round(reqAns);
         }
-
+*/
         /*function calcangle(ax,ay,bx,by,cx,cy,dx,dy) {
             let dx0  = bx - ax;
             let dy0  = by - ay;
@@ -300,11 +329,12 @@ console.log("angleDeg:" + angleDeg + " nx:" + nx + " ny:" + ny);
         class Point {
             constructor(x, y, s=false) {
                 this.pos = new Vector(x, y);
-                this.vel = new Vector(randomRange(-10, 10), randomRange(-10, 10));
+                this.vel = s ? {x:0, y:0} : new Vector(randomRange(-10, 10), randomRange(-10, 10));
                 this.static = s;
             }
 
             bounce() {
+console.log("check bounce: " + JSON.stringify(this.pos));
                 if (this.pos.x <= 0 || this.pos.x >= width)  this.vel.x *= -1;
                 if (this.pos.y <= 0 || this.pos.y >= height) this.vel.y *= -1;
             }
