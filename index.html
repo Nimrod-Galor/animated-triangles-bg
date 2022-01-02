@@ -30,7 +30,7 @@
         var context;
         var agents = [];
         var triangles = [];
-        var blurredRect = {x: 50,y: 80,height: 200,width: 200,spread: 100};
+        var blurredRect = {x: 50,y: 80,height: 200,width: 200,spread: 100, radius:15};
 
         function initScene(){
             width  = (window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth);
@@ -43,7 +43,7 @@
             let wheight = document.getElementById("wrapper").offsetHeight;
             let wwidth = document.getElementById("wrapper").offsetWidth;
             let wx = (width - wwidth) * 0.5
-            blurredRect = {x: wx, y: 50, height: wheight, width: wwidth,spread: 100};
+            blurredRect = {x: wx, y: 50, height: wheight, width: wwidth,spread: 100, radius:18};
 //console.log(JSON.stringify(blurredRect));
             context = canvas.getContext("2d");
 
@@ -125,6 +125,7 @@
                 then = now - (delta % interval);
                 context.fillStyle = "#FFFFFF";
                 context.fillRect(0, 0, width, height);
+                //context.globalCompositeOperation = 'source-over'; //default
                 //context.globalAlpha = 0.2;
 
                 //contextclearRect(0, 0, width, height);
@@ -167,6 +168,30 @@
                         }
                     }
                 }
+
+
+
+                /*/ draw a rounded rectangle
+                //context.globalCompositeOperation = 'destination-in';
+                context.beginPath();
+                context.moveTo(blurredRect.x + blurredRect.radius, blurredRect.y);
+                context.lineTo(blurredRect.x + blurredRect.width - blurredRect.radius, blurredRect.y);
+                context.quadraticCurveTo(blurredRect.x + blurredRect.width, blurredRect.y, blurredRect.x + blurredRect.width, blurredRect.y + blurredRect.radius);
+                context.lineTo(blurredRect.x + blurredRect.width, blurredRect.y + blurredRect.height - blurredRect.radius);
+                context.quadraticCurveTo(blurredRect.x + blurredRect.width, blurredRect.y + blurredRect.height, blurredRect.x + blurredRect.width - blurredRect.radius, blurredRect.y + blurredRect.height);
+                context.lineTo(blurredRect.x + blurredRect.radius, blurredRect.y + blurredRect.height);
+                context.quadraticCurveTo(blurredRect.x, blurredRect.y + blurredRect.height, blurredRect.x, blurredRect.y + blurredRect.height - blurredRect.radius);
+                context.lineTo(blurredRect.x, blurredRect.y + blurredRect.radius);
+                context.quadraticCurveTo(blurredRect.x, blurredRect.y, blurredRect.x + blurredRect.radius, blurredRect.y);
+                context.closePath();
+
+                context.arc(50, 50, 50, 0, 2 * Math.PI, true);
+                context.closePath();
+
+                context.clip();
+
+console.log("IN");*/
+
 
                 context.filter = 'blur(10px)';
                 // draw the canvas over itself, cropping to our required rect
