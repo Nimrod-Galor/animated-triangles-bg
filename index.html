@@ -6,12 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         html, body{padding: 0; margin: 0;}
+        canvas{position: absolute; z-index: -9999;top:0;left:0;}
+        #wrapper{width: 80%;min-height: 30vw;border: 1px solid #000;margin: 50px auto;text-align: center;padding: 25px;}
     </style>
     <script src="delaunay.js"></script>
     <title>Document</title>
 </head>
 <body>
     <canvas width="95" height="95" id="canvas"></canvas>
+    <div id="wrapper"><h1>frosted-glass-effect</h1></div>
 
     <script type="text/javascript">
         window.addEventListener('resize', initScene);
@@ -27,6 +30,7 @@
         var context;
         var agents = [];
         var triangles = [];
+        var blurredRect = {x: 50,y: 80,height: 200,width: 200,spread: 100};
 
         function initScene(){
             width  = (window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth);
@@ -36,6 +40,11 @@
             canvas.width = width;
             canvas.height = height;
 
+            let wheight = document.getElementById("wrapper").offsetHeight;
+            let wwidth = document.getElementById("wrapper").offsetWidth;
+            let wx = (width - wwidth) * 0.5
+            blurredRect = {x: wx, y: 50, height: wheight, width: wwidth,spread: 100};
+//console.log(JSON.stringify(blurredRect));
             context = canvas.getContext("2d");
 
             agents = [
@@ -116,6 +125,9 @@
                 then = now - (delta % interval);
                 context.fillStyle = "#FFFFFF";
                 context.fillRect(0, 0, width, height);
+                //context.globalAlpha = 0.2;
+
+                //contextclearRect(0, 0, width, height);
 
                 let pointVelRevertFlag = [];
                 for(let i=0; i < triangles.length; i++){
@@ -132,23 +144,40 @@
                         if(!triangles[i].p1.static){
                             if(!pointVelRevertFlag.includes(triangles[i].p1)){
                                 pointVelRevertFlag.push(triangles[i].p1);
-                                reflect(triangles[i].p2.pos,  triangles[i].p3.pos,  triangles[i].p1.vel);
+                                //reflect(triangles[i].p2.pos,  triangles[i].p3.pos,  triangles[i].p1.vel);
+                                triangles[i].p1.vel.x *= -1;
+                                triangles[i].p1.vel.y *= -1;
                             }
                         }
                         if(!triangles[i].p2.static){
                             if(!pointVelRevertFlag.includes(triangles[i].p2)){
                                 pointVelRevertFlag.push(triangles[i].p2);
-                                reflect(triangles[i].p1.pos,  triangles[i].p3.pos,  triangles[i].p2.vel);
+                                //reflect(triangles[i].p1.pos,  triangles[i].p3.pos,  triangles[i].p2.vel);
+                                triangles[i].p2.vel.x *= -1;
+                                triangles[i].p2.vel.y *= -1;
                             }
                         }
                         if(!triangles[i].p3.static){
                             if(!pointVelRevertFlag.includes(triangles[i].p3)){
                                 pointVelRevertFlag.push(triangles[i].p3);
-                                reflect(triangles[i].p2.pos,  triangles[i].p1.pos,  triangles[i].p3.vel);
+                                //reflect(triangles[i].p2.pos,  triangles[i].p1.pos,  triangles[i].p3.vel);
+                                triangles[i].p3.vel.x *= -1;
+                                triangles[i].p3.vel.y *= -1;
                             }
                         }
                     }
                 }
+
+                context.filter = 'blur(10px)';
+                // draw the canvas over itself, cropping to our required rect
+                context.drawImage(canvas,
+                    blurredRect.x, blurredRect.y, blurredRect.width, blurredRect.height,
+                    blurredRect.x, blurredRect.y, blurredRect.width, blurredRect.height
+                );
+                // draw the coloring (white-ish) layer, without blur
+                context.filter = 'none'; // remove filter
+                context.fillStyle = 'rgba(255,255,255,0.4)';
+                context.fillRect(blurredRect.x, blurredRect.y, blurredRect.width, blurredRect.height);
 
                 for(let i = 30; i < agents.length; i++){
                     agents[i].update();
@@ -157,7 +186,7 @@
             requestAnimationFrame(animate);
         }
 
-        function reflect(A, B, P){
+        /*function reflect(A, B, P){
             // get vector for the line
             let lineVecX = B.x - A.x;
             let lineVecY = B.y - A.y;
@@ -182,7 +211,7 @@
             let len = Math.sqrt(refX * refX + refY * refY);
             P.x = (refX / len) * magnitude; // I have kept the same speed.
             P.y = (refY / len) * magnitude;
-        }
+        }*/
 
         function rblue(){
             let h = 240;
