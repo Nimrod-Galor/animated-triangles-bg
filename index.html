@@ -7,7 +7,7 @@
     <style>
         html, body{padding: 0; margin: 0;}
         canvas{position: absolute; z-index: -9999;top:0;left:0;}
-        #wrapper{width: 80%;min-height: 30vw;border: 1px solid #000;margin: 50px auto;text-align: center;padding: 25px;}
+        #wrapper{width: 80%;min-height: 30vw;border: 1px solid #000;margin: 50px auto;text-align: center;padding: 25px;border-radius: 15px;}
     </style>
     <script src="delaunay.js"></script>
     <title>Document</title>
@@ -43,7 +43,7 @@
             let wheight = document.getElementById("wrapper").offsetHeight;
             let wwidth = document.getElementById("wrapper").offsetWidth;
             let wx = (width - wwidth) * 0.5
-            blurredRect = {x: wx, y: 50, height: wheight, width: wwidth,spread: 100, radius:18};
+            blurredRect = {x: wx, y: 50, height: wheight, width: wwidth,spread: 50, radius:18};
 //console.log(JSON.stringify(blurredRect));
             context = canvas.getContext("2d");
 
@@ -171,8 +171,9 @@
 
 
 
-                /*/ draw a rounded rectangle
+                // draw a rounded rectangle
                 //context.globalCompositeOperation = 'destination-in';
+                context.save();
                 context.beginPath();
                 context.moveTo(blurredRect.x + blurredRect.radius, blurredRect.y);
                 context.lineTo(blurredRect.x + blurredRect.width - blurredRect.radius, blurredRect.y);
@@ -190,10 +191,10 @@
 
                 context.clip();
 
-console.log("IN");*/
 
 
-                context.filter = 'blur(10px)';
+
+                context.filter = 'blur(' + blurredRect.spread + 'px)';
                 // draw the canvas over itself, cropping to our required rect
                 context.drawImage(canvas,
                     blurredRect.x, blurredRect.y, blurredRect.width, blurredRect.height,
@@ -201,8 +202,10 @@ console.log("IN");*/
                 );
                 // draw the coloring (white-ish) layer, without blur
                 context.filter = 'none'; // remove filter
-                context.fillStyle = 'rgba(255,255,255,0.4)';
+                context.fillStyle = 'rgba(255,255,255,0.1)';
                 context.fillRect(blurredRect.x, blurredRect.y, blurredRect.width, blurredRect.height);
+
+                context.restore();
 
                 for(let i = 30; i < agents.length; i++){
                     agents[i].update();
